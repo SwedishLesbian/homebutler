@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2](https://github.com/Higangssh/homebutler/compare/v0.8.1...v0.8.2) - 2026-03-02
+
+### 🚀 Features
+
+- add `alerts --watch` continuous monitoring mode
+- configurable interval (`--interval`) and custom thresholds (`--config`)
+- event deduplication (same alert won't repeat until recovered)
+- aligned output formatting with fixed-width columns
+
 ## [0.8.1](https://github.com/Higangssh/homebutler/compare/v0.8.0...v0.8.1) - 2026-02-28
 
 ### ♻️ Refactor
