@@ -37,6 +37,7 @@ jobs:
           args: --output CHANGELOG.md
 
       - name: Commit CHANGELOG
+        continue-on-error: true
         run: |
           if git diff --quiet CHANGELOG.md 2>/dev/null; then
             echo "No CHANGELOG changes"
