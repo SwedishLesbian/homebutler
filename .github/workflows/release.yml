@@ -30,15 +30,19 @@ jobs:
       - name: Run tests
         run: go test ./...
 
-      - name: Generate CHANGELOG
-        uses: orhun/git-cliff-action@v4
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v6
         with:
-          config: cliff.toml
-          args: --output CHANGELOG.md
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Commit CHANGELOG
+      - name: Generate and commit CHANGELOG
         continue-on-error: true
         run: |
+          pip install git-cliff || pip install --user git-cliff || true
+          git-cliff --config cliff.toml --output CHANGELOG.md || true
           if git diff --quiet CHANGELOG.md 2>/dev/null; then
             echo "No CHANGELOG changes"
           else
@@ -48,14 +52,6 @@ jobs:
             git commit -m "docs: update CHANGELOG for ${GITHUB_REF#refs/tags/}"
             git push origin HEAD:main
           fi
-
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          version: latest
-          args: release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Homebrew tap
         env:
