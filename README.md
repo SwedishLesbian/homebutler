@@ -42,18 +42,18 @@ homebutler is the **tool layer** in an AI ChatOps stack. It doesn't care what's 
 └──────────────────────┬───────────────────────────┘
                        │  CLI exec or MCP (stdio)
 ┌──────────────────────▼───────────────────────────┐
-│  Layer 1 — Tool (homebutler)        ← YOU ARE HERE│
-│                                                  │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐          │
-│  │   CLI   │  │   MCP   │  │   Web   │          │
-│  │ stdout  │  │  stdio  │  │  :8080  │          │
-│  └────┬────┘  └────┬────┘  └────┬────┘          │
-│       └─────────┬──┴───────────┘                │
-│                 ▼                                 │
-│          internal/*                              │
-│   system · docker · ports · network              │
-│   wake · alerts · remote (SSH)                   │
-└──────────────────────────────────────────────────┘
+│  Layer 1 — Tool (homebutler)       ← YOU ARE HERE │
+│                                                   │
+│  ┌─────────┐  ┌─────────┐  ┌─────────┐           │
+│  │   CLI   │  │   MCP   │  │   Web   │           │
+│  │ stdout  │  │  stdio  │  │  :8080  │           │
+│  └────┬────┘  └────┬────┘  └────┬────┘           │
+│       └────────────┼────────────┘                 │
+│                    ▼                              │
+│             internal/*                            │
+│   system · docker · ports · network               │
+│   wake · alerts · remote (SSH)                    │
+└───────────────────────────────────────────────────┘
 ```
 
 **Three interfaces, one core:**
