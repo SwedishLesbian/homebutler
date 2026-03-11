@@ -101,9 +101,11 @@ func pingSweep(ctx context.Context, subnet string) {
 		wg.Add(1)
 		select {
 		case sem <- struct{}{}:
+			// acquired semaphore, proceed
 		case <-ctx.Done():
 			wg.Done()
-			break
+			wg.Wait()
+			return
 		}
 		go func(t string) {
 			defer wg.Done()
