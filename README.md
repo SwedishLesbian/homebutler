@@ -324,58 +324,19 @@ Events are deduplicated — the same alert won't repeat until the resource recov
 
 ## Backup & Restore
 
-Back up all your Docker service volumes, compose files, and environment variables in one command.
+One-command Docker backup — volumes, compose files, and env variables.
 
 ```bash
 homebutler backup                          # backup everything
 homebutler backup --service jellyfin       # backup a specific service
 homebutler backup --to /mnt/nas/backups/   # custom destination
 homebutler backup list                     # list existing backups
+homebutler restore ./backup.tar.gz         # restore from archive
 ```
 
-**Restore from a backup:**
+> ⚠️ Database services (PostgreSQL, MySQL, etc.) should be paused before backup for data consistency. See [full documentation](docs/backup.md) for details.
 
-```bash
-homebutler restore ./backup_2026-03-11_1830.tar.gz                    # restore all
-homebutler restore ./backup_2026-03-11_1830.tar.gz --service postgres  # restore one service
-```
-
-**What gets backed up:**
-
-- Docker named volumes (using the official `docker run --rm alpine tar` pattern)
-- Bind-mounted directories
-- `docker-compose.yml` files
-- `.env` files
-- `manifest.json` with full metadata (services, volumes, timestamps)
-
-**Archive structure:**
-
-```
-backup_2026-03-11_1830.tar.gz
-├── manifest.json
-├── compose/
-│   ├── docker-compose.yml
-│   └── .env
-└── volumes/
-    ├── postgres_data.tar.gz
-    └── jellyfin_config.tar.gz
-```
-
-**Custom backup directory** in your config:
-
-```yaml
-backup:
-  dir: /mnt/nas/backups/homebutler
-```
-
-Default location: `~/.homebutler/backups/`
-
-> **⚠️ Important notes:**
->
-> - **Database services** (PostgreSQL, MySQL, MongoDB, etc.): We recommend pausing the container (`docker pause <name>`) before backup and unpausing after (`docker unpause <name>`) to ensure data consistency. Alternatively, use `pg_dump` / `mysqldump` for a proper database export before running `homebutler backup`.
-> - homebutler does **not** automatically stop or pause containers during backup.
-> - Backup files are **not encrypted**. Store them in a secure location.
-> - For scheduled backups, combine with cron: `0 3 * * * homebutler backup --to /mnt/nas/backups/`
+📖 **[Full backup documentation →](docs/backup.md)** — how it works, archive structure, scheduled backups, security notes.
 
 ## Configuration
 
