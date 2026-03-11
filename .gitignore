@@ -49,3 +49,12 @@ demo-mcp.gif
 *.bak
 *.tmp
 *.log
+
+# Media files (keep in assets/ only)
+*.mp4
+*.gif
+!assets/*.gif
+!assets/*.mp4
+
+# Requirements docs (local only)
+requirements-*.md
