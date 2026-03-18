@@ -1,6 +1,8 @@
 package remote
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -205,13 +207,68 @@ func downloadRelease(osName, arch string, version ...string) ([]byte, error) {
 		return nil, fmt.Errorf("download failed: HTTP %d for %s", resp.StatusCode, url)
 	}
 
-	// Download tar.gz and extract the binary
+	// Download tar.gz
 	tarData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
+	// Verify checksum
+	if err := verifyChecksum(tarData, filename, version...); err != nil {
+		return nil, fmt.Errorf("checksum verification failed: %w", err)
+	}
+
 	return extractBinaryFromTarGz(tarData)
+}
+
+// verifyChecksum downloads checksums.txt and verifies the SHA256 hash.
+func verifyChecksum(data []byte, filename string, version ...string) error {
+	var checksumsURL string
+	if len(version) > 0 && version[0] != "" {
+		checksumsURL = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/download/v%s/checksums.txt", version[0])
+	} else {
+		checksumsURL = releaseURL + "/checksums.txt"
+	}
+
+	resp, err := http.Get(checksumsURL)
+	if err != nil {
+		return fmt.Errorf("cannot fetch checksums: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		// No checksums available — skip verification for older releases
+		return nil
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("read checksums: %w", err)
+	}
+
+	// Find expected hash for our file
+	var expectedHash string
+	for _, line := range strings.Split(string(body), "\n") {
+		parts := strings.Fields(line)
+		if len(parts) == 2 && parts[1] == filename {
+			expectedHash = parts[0]
+			break
+		}
+	}
+
+	if expectedHash == "" {
+		return fmt.Errorf("no checksum found for %s", filename)
+	}
+
+	// Compute actual hash
+	h := sha256.Sum256(data)
+	actualHash := hex.EncodeToString(h[:])
+
+	if actualHash != expectedHash {
+		return fmt.Errorf("hash mismatch for %s\n  expected: %s\n  got:      %s", filename, expectedHash, actualHash)
+	}
+
+	return nil
 }
 
 func runSession(client *ssh.Client, cmd string) error {
