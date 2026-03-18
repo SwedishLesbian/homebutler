@@ -92,6 +92,8 @@ type InstallOptions struct {
 type composeContext struct {
 	Port    string
 	DataDir string
+	UID     int
+	GID     int
 }
 
 // Registry holds all installable apps.
@@ -111,6 +113,9 @@ var Registry = map[string]App{
       - "{{.Port}}:3001"
     volumes:
       - "{{.DataDir}}:/app/data"
+    environment:
+      - PUID={{.UID}}
+      - PGID={{.GID}}
 `,
 	},
 }
@@ -220,6 +225,8 @@ func Install(app App, opts InstallOptions) error {
 	ctx := composeContext{
 		Port:    port,
 		DataDir: dataDir,
+		UID:     os.Getuid(),
+		GID:     os.Getgid(),
 	}
 
 	tmpl, err := template.New("compose").Parse(app.ComposeFile)
@@ -278,7 +285,17 @@ func Purge(appName string) error {
 	if err := removeInstalled(appName); err != nil {
 		return err
 	}
-	return os.RemoveAll(appDir)
+	// Try normal remove first
+	err := os.RemoveAll(appDir)
+	if err != nil {
+		// Docker may create files as root — try passwordless sudo
+		_, sudoErr := util.RunCmd("sudo", "-n", "rm", "-rf", appDir)
+		if sudoErr != nil {
+			return fmt.Errorf("permission denied. Docker creates files as root.\n"+
+				"    Run: sudo rm -rf %s", appDir)
+		}
+	}
+	return nil
 }
 
 // Status checks if the installed app is running.

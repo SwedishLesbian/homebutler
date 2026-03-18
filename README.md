@@ -224,6 +224,11 @@ Commands:
   restore <archive>   Restore from a backup archive
   upgrade             Upgrade local + all remote servers to latest
   deploy              Install homebutler on remote servers
+  install <app>       Install a self-hosted app (docker compose)
+  install list        List available apps
+  install status <a>  Check installed app status
+  install uninstall   Stop app (keep data)
+  install purge       Stop app + delete all data
   mcp                 Start MCP server (JSON-RPC over stdio)
   version             Print version
 
@@ -329,6 +334,52 @@ Built-in [MCP](https://modelcontextprotocol.io/) server — manage your homelab 
 Works with Claude Desktop, ChatGPT, Cursor, Windsurf, and any MCP client.
 
 📖 **[MCP server setup →](docs/mcp-server.md)** — supported clients, available tools, agent skills.
+
+## App Install
+
+Deploy self-hosted apps with a single command. Each app runs via **docker compose** with automatic pre-checks, health verification, and clean lifecycle management.
+
+```bash
+# List available apps
+homebutler install list
+
+# Install (default port)
+homebutler install uptime-kuma
+
+# Install with custom port
+homebutler install uptime-kuma --port 8080
+
+# Check status
+homebutler install status uptime-kuma
+
+# Stop (data preserved)
+homebutler install uninstall uptime-kuma
+
+# Stop + delete everything
+homebutler install purge uptime-kuma
+```
+
+### How it works
+
+```
+~/.homebutler/apps/
+  └── uptime-kuma/
+       ├── docker-compose.yml   ← auto-generated, editable
+       └── data/                ← persistent data (bind mount)
+```
+
+- **Pre-checks** — Verifies docker is installed/running, port is available, no duplicate containers
+- **Compose-based** — Each app gets its own `docker-compose.yml` you can inspect and customize
+- **Data safety** — `uninstall` stops containers but keeps your data; `purge` removes everything
+- **Cross-platform** — Auto-detects docker socket (default, colima, podman)
+
+### Available apps
+
+| App | Default Port | Description |
+|-----|-------------|-------------|
+| `uptime-kuma` | 3001 | Self-hosted monitoring tool |
+
+> More apps coming soon. Want to add one? See [Contributing](CONTRIBUTING.md).
 
 ## Installation
 
