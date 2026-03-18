@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/Higangssh/homebutler/internal/util"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -238,5 +239,5 @@ func scpUpload(client *ssh.Client, data []byte, remotePath string, mode os.FileM
 		fmt.Fprint(w, "\x00")
 	}()
 
-	return session.Run(fmt.Sprintf("scp -t %s", remotePath))
+	return session.Run(fmt.Sprintf("scp -t %s", util.ShellQuote(remotePath)))
 }

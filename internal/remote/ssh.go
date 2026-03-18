@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/Higangssh/homebutler/internal/util"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
@@ -36,7 +37,8 @@ func Run(server *config.ServerConfig, args ...string) ([]byte, error) {
 
 	// Try configured bin path, then common locations
 	binPath := server.SSHBinPath()
-	cmd := fmt.Sprintf("export PATH=$HOME/.local/bin:$HOME/bin:$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/snap/bin:$PATH; %s %s", binPath, strings.Join(args, " "))
+	// Quote all arguments to prevent shell injection
+	cmd := fmt.Sprintf("export PATH=$HOME/.local/bin:$HOME/bin:$HOME/go/bin:/opt/homebrew/bin:/usr/local/bin:/usr/local/sbin:/snap/bin:$PATH; %s %s", util.ShellQuote(binPath), util.ShellQuoteArgs(args))
 	out, err := session.CombinedOutput(cmd)
 	if err != nil {
 		return nil, fmt.Errorf("[%s] remote command failed: %w\n  → Output: %s\n  → Check if homebutler is installed on the remote server: homebutler deploy %s", server.Name, err, strings.TrimSpace(string(out)), server.Name)
