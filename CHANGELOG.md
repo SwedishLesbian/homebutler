@@ -22,9 +22,6 @@ All notable changes to this project will be documented in this file.
 - harden SSH remote execution against shell injection (ShellQuote)
 - add checksum verification for upgrade downloads
 
-### 🎨 Other
-
-- add spider-man theme git credits demo to README
 
 ## [0.9.0](https://github.com/Higangssh/homebutler/compare/v0.8.2...v0.9.0) - 2026-03-11
 
@@ -224,4 +221,3 @@ All notable changes to this project will be documented in this file.
 - add alerts, config file loading, and WOL name support
 - add network scan and filter multicast addresses
 - initial project setup with core commands
-
