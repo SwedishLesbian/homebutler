@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 ## [0.10.0](https://github.com/Higangssh/homebutler/compare/v0.9.0...v0.10.0) - 2026-03-20
 
+**One-command app deployment for your homelab.** Install, manage, and remove self-hosted apps with docker compose — no manual setup needed.
+
+```bash
+homebutler install uptime-kuma          # deploy in seconds
+homebutler install vaultwarden --port 9090  # custom port
+homebutler install status uptime-kuma   # check health
+homebutler install uninstall uptime-kuma    # stop, keep data
+homebutler install purge uptime-kuma    # remove everything
+```
+
+Each app gets its own `docker-compose.yml` at `~/.homebutler/apps/<app>/` with persistent data, pre-flight checks (docker, ports, duplicates), and cross-platform support (Linux, macOS, colima, podman).
+
 ### 🚀 Features
 
 - add `install` command — deploy self-hosted apps with docker compose
