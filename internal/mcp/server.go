@@ -12,6 +12,7 @@ import (
 	"github.com/Higangssh/homebutler/internal/alerts"
 	"github.com/Higangssh/homebutler/internal/config"
 	"github.com/Higangssh/homebutler/internal/docker"
+	"github.com/Higangssh/homebutler/internal/install"
 	"github.com/Higangssh/homebutler/internal/network"
 	"github.com/Higangssh/homebutler/internal/ports"
 	"github.com/Higangssh/homebutler/internal/remote"
@@ -259,6 +260,59 @@ func (s *Server) executeTool(name string, args map[string]any) (any, error) {
 		return network.ScanWithTimeout(30 * time.Second)
 	case "alerts":
 		return alerts.Check(&s.cfg.Alerts)
+
+	case "install_list":
+		return install.List(), nil
+
+	case "install_app":
+		appName := stringArg(args, "app")
+		app, ok := install.Registry[appName]
+		if !ok {
+			return nil, fmt.Errorf("unknown app %q, use install_list to see available apps", appName)
+		}
+		opts := install.InstallOptions{Port: stringArg(args, "port")}
+		port := app.DefaultPort
+		if opts.Port != "" {
+			port = opts.Port
+		}
+		issues := install.PreCheck(app, port)
+		if len(issues) > 0 {
+			return map[string]any{"status": "failed", "issues": issues}, nil
+		}
+		if err := install.Install(app, opts); err != nil {
+			return nil, err
+		}
+		status, _ := install.Status(app.Name)
+		return map[string]any{
+			"status": "installed",
+			"app":    app.Name,
+			"port":   port,
+			"path":   install.AppDir(app.Name),
+			"state":  status,
+		}, nil
+
+	case "install_status":
+		appName := stringArg(args, "app")
+		status, err := install.Status(appName)
+		if err != nil {
+			return nil, err
+		}
+		return map[string]any{"app": appName, "state": status}, nil
+
+	case "install_uninstall":
+		appName := stringArg(args, "app")
+		if err := install.Uninstall(appName); err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "uninstalled", "app": appName, "data_preserved": true}, nil
+
+	case "install_purge":
+		appName := stringArg(args, "app")
+		if err := install.Purge(appName); err != nil {
+			return nil, err
+		}
+		return map[string]any{"status": "purged", "app": appName}, nil
+
 	default:
 		return nil, fmt.Errorf("unknown tool: %s", name)
 	}
@@ -444,6 +498,58 @@ func toolDefinitions() []toolDef {
 				Properties: map[string]propDef{
 					"server": {Type: "string", Description: "Remote server name from config (optional, runs locally if omitted)"},
 				},
+			},
+		},
+		{
+			Name:        "install_list",
+			Description: "List available self-hosted apps that can be installed",
+			InputSchema: inputSchema{
+				Type: "object",
+			},
+		},
+		{
+			Name:        "install_app",
+			Description: "Install a self-hosted app via docker compose. Pre-checks docker, ports, and duplicates automatically.",
+			InputSchema: inputSchema{
+				Type: "object",
+				Properties: map[string]propDef{
+					"app":  {Type: "string", Description: "App name (e.g. uptime-kuma, vaultwarden)"},
+					"port": {Type: "string", Description: "Custom host port (optional, uses default if omitted)"},
+				},
+				Required: []string{"app"},
+			},
+		},
+		{
+			Name:        "install_status",
+			Description: "Check the status of an installed app",
+			InputSchema: inputSchema{
+				Type: "object",
+				Properties: map[string]propDef{
+					"app": {Type: "string", Description: "App name"},
+				},
+				Required: []string{"app"},
+			},
+		},
+		{
+			Name:        "install_uninstall",
+			Description: "Stop an installed app and remove its containers. Data is preserved.",
+			InputSchema: inputSchema{
+				Type: "object",
+				Properties: map[string]propDef{
+					"app": {Type: "string", Description: "App name"},
+				},
+				Required: []string{"app"},
+			},
+		},
+		{
+			Name:        "install_purge",
+			Description: "Stop an installed app and delete all data including containers, config, and volumes.",
+			InputSchema: inputSchema{
+				Type: "object",
+				Properties: map[string]propDef{
+					"app": {Type: "string", Description: "App name"},
+				},
+				Required: []string{"app"},
 			},
 		},
 	}

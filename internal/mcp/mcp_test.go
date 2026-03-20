@@ -95,20 +95,25 @@ func TestToolsList(t *testing.T) {
 		t.Fatalf("unmarshal toolsListResult: %v", err)
 	}
 
-	if len(list.Tools) != 9 {
-		t.Errorf("expected 9 tools, got %d", len(list.Tools))
+	if len(list.Tools) != 14 {
+		t.Errorf("expected 14 tools, got %d", len(list.Tools))
 	}
 
 	expectedTools := map[string]bool{
-		"system_status":  false,
-		"docker_list":    false,
-		"docker_restart": false,
-		"docker_stop":    false,
-		"docker_logs":    false,
-		"wake":           false,
-		"open_ports":     false,
-		"network_scan":   false,
-		"alerts":         false,
+		"system_status":     false,
+		"docker_list":       false,
+		"docker_restart":    false,
+		"docker_stop":       false,
+		"docker_logs":       false,
+		"wake":              false,
+		"open_ports":        false,
+		"network_scan":      false,
+		"alerts":            false,
+		"install_list":      false,
+		"install_app":       false,
+		"install_status":    false,
+		"install_uninstall": false,
+		"install_purge":     false,
 	}
 
 	for _, tool := range list.Tools {
@@ -287,10 +292,14 @@ func TestEmptyLines(t *testing.T) {
 func TestToolDefinitionsHaveRequiredFields(t *testing.T) {
 	tools := toolDefinitions()
 	requireMap := map[string][]string{
-		"docker_restart": {"name"},
-		"docker_stop":    {"name"},
-		"docker_logs":    {"name"},
-		"wake":           {"target"},
+		"docker_restart":    {"name"},
+		"docker_stop":       {"name"},
+		"docker_logs":       {"name"},
+		"wake":              {"target"},
+		"install_app":       {"app"},
+		"install_status":    {"app"},
+		"install_uninstall": {"app"},
+		"install_purge":     {"app"},
 	}
 
 	for _, tool := range tools {
