@@ -1,6 +1,6 @@
 ---
 name: homeserver
-description: Homelab server management via homebutler CLI. System status, Docker, WoL, port scanning, TUI dashboard, web dashboard, alerts, and multi-server SSH.
+description: Homelab server management via homebutler CLI. Check system status, manage Docker containers, install self-hosted apps, Wake-on-LAN, port scanning, alerts, backup/restore, and multi-server SSH.
 metadata:
   {
     "openclaw": {
@@ -129,6 +129,17 @@ homebutler deploy --all                                 # Deploy to all remote s
 Installs homebutler on remote servers via SSH. Auto-detects remote OS/architecture.
 Install path priority: `/usr/local/bin` → `sudo /usr/local/bin` → `~/.local/bin` (with PATH auto-registration in .profile/.bashrc/.zshrc).
 
+### App Install
+```bash
+homebutler install list              # List available apps
+homebutler install <app>             # Install an app (docker compose)
+homebutler install <app> --port 9090 # Custom port
+homebutler install status <app>      # Check app status
+homebutler install uninstall <app>   # Stop app, keep data
+homebutler install purge <app>       # Stop + delete all data
+```
+Deploys self-hosted apps via docker compose. Each app gets its own directory at `~/.homebutler/apps/<app>/` with auto-generated `docker-compose.yml` and persistent data. Pre-checks docker availability, port conflicts, and duplicates. Currently available: uptime-kuma, vaultwarden.
+
 ### MCP Server
 ```bash
 homebutler mcp                       # Start MCP server (JSON-RPC over stdio)
@@ -232,3 +243,12 @@ User: "Any alerts across all servers?"
 
 User: "Deploy homebutler to the new server"
 → Run `homebutler deploy --server <name>`, report result
+
+User: "Install uptime-kuma"
+→ Run `homebutler install uptime-kuma`, report URL and status
+
+User: "What apps are available?"
+→ Run `homebutler install list`, show available apps
+
+User: "Remove vaultwarden completely"
+→ Run `homebutler install purge vaultwarden`, confirm deletion
