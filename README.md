@@ -145,10 +145,6 @@ This is what homebutler + [OpenClaw](https://github.com/openclaw/openclaw) looks
 
 ## Demo
 
-### 🧠 AI-Powered Management (MCP)
-
-> **One natural language prompt manages your entire homelab.** Claude Code calls homebutler MCP tools in parallel — checking server status, listing Docker containers, and alerting on disk usage across multiple servers. [See screenshots & setup →](#mcp-server)
-
 ### 🌐 Web Dashboard
 
 <p align="center">
@@ -186,6 +182,10 @@ homebutler serve --demo       # Demo mode with realistic sample data
 
 > **`homebutler watch`** — A terminal-based dashboard powered by Bubble Tea. Monitors all configured servers with real-time updates, color-coded resource bars, and Docker container status. No browser needed.
 
+### 🧠 AI-Powered Management (MCP)
+
+> **One natural language prompt manages your entire homelab.** Claude Code calls homebutler MCP tools in parallel — checking server status, listing Docker containers, and alerting on disk usage across multiple servers. [See screenshots & setup →](#mcp-server)
+
 ## Quick Start
 
 ```bash
@@ -209,13 +209,88 @@ homebutler docker list
 homebutler wake desktop
 homebutler ports
 homebutler status --all
+
+# Install a self-hosted app (e.g. Uptime Kuma monitoring)
+homebutler install uptime-kuma
 ```
+
+## App Install
+
+Deploy self-hosted apps with a single command. Each app runs via **docker compose** with automatic pre-checks, health verification, and clean lifecycle management.
+
+```bash
+# List available apps
+homebutler install list
+
+# Install (default port)
+homebutler install uptime-kuma
+
+# Install with custom port
+homebutler install uptime-kuma --port 8080
+
+# Check status
+homebutler install status uptime-kuma
+
+# Stop (data preserved)
+homebutler install uninstall uptime-kuma
+
+# Stop + delete everything
+homebutler install purge uptime-kuma
+```
+
+### How it works
+
+```
+~/.homebutler/apps/
+  └── uptime-kuma/
+       ├── docker-compose.yml   ← auto-generated, editable
+       └── data/                ← persistent data (bind mount)
+```
+
+- **Pre-checks** — Verifies docker is installed/running, port is available, no duplicate containers
+- **Compose-based** — Each app gets its own `docker-compose.yml` you can inspect and customize
+- **Data safety** — `uninstall` stops containers but keeps your data; `purge` removes everything
+- **Cross-platform** — Auto-detects docker socket (default, colima, podman)
+
+### Available apps
+
+| App | Default Port | Description |
+|-----|-------------|-------------|
+| `uptime-kuma` | 3001 | Self-hosted monitoring tool |
+| `vaultwarden` | 8080 | Bitwarden-compatible password manager |
+| `filebrowser` | 8081 | Web-based file manager |
+| `it-tools` | 8082 | Developer utilities (JSON, Base64, Hash, etc.) |
+| `gitea` | 3002 | Lightweight self-hosted Git service |
+
+> More apps coming soon. Want to add one? See [Contributing](CONTRIBUTING.md).
 
 ## Usage
 
 ```
 homebutler <command> [flags]
 
+Commands:
+  status              System status (CPU, memory, disk, uptime)
+  docker list         List running containers
+  install <app>       Install a self-hosted app (docker compose)
+  alerts              Show current alert status
+  watch               TUI dashboard (monitors all configured servers)
+  serve               Web dashboard (browser-based, go:embed)
+
+Flags:
+  --json              JSON output (default: human-readable)
+  --server <name>     Run on a specific remote server
+  --all               Run on all configured servers in parallel
+  --port <number>     Port for serve command (default: 8080)
+  --config <path>     Config file (auto-detected, see Configuration)
+```
+
+Run `homebutler --help` for all commands.
+
+<details>
+<summary>📋 All Commands & Flags</summary>
+
+```
 Commands:
   init                Interactive setup wizard
   status              System status (CPU, memory, disk, uptime)
@@ -252,15 +327,17 @@ Flags:
   --demo              Run serve with realistic demo data
   --watch             Continuous monitoring mode (alerts command)
   --interval <dur>    Watch interval, e.g. 30s, 1m (default: 30s)
-  --config <path>     Custom alert thresholds config file
+  --config <path>     Config file (auto-detected, see Configuration)
   --local             Upgrade only the local binary (skip remote servers)
   --local <path>      Use local binary for deploy (air-gapped)
-  --config <path>     Config file (auto-detected, see Configuration)
   --service <name>    Target a specific Docker service (backup/restore)
   --to <path>         Custom backup destination directory
 ```
 
-## Web Dashboard
+</details>
+
+<details>
+<summary>🌐 Web Dashboard</summary>
 
 `homebutler serve` starts an embedded web dashboard — no Node.js, no Docker, no extra dependencies.
 
@@ -272,7 +349,10 @@ homebutler serve --demo         # demo mode with sample data
 
 📖 **[Web dashboard details →](docs/web-dashboard.md)**
 
-## TUI Dashboard
+</details>
+
+<details>
+<summary>🖥️ TUI Dashboard</summary>
 
 `homebutler watch` launches an interactive terminal dashboard (btop-style):
 
@@ -281,6 +361,8 @@ homebutler watch               # monitors all configured servers
 ```
 
 Auto-refreshes every 2 seconds. Press `q` to quit.
+
+</details>
 
 ## Alert Monitoring
 
@@ -346,56 +428,6 @@ Built-in [MCP](https://modelcontextprotocol.io/) server — manage your homelab 
 Works with Claude Desktop, ChatGPT, Cursor, Windsurf, and any MCP client.
 
 📖 **[MCP server setup →](docs/mcp-server.md)** — supported clients, available tools, agent skills.
-
-## App Install
-
-Deploy self-hosted apps with a single command. Each app runs via **docker compose** with automatic pre-checks, health verification, and clean lifecycle management.
-
-```bash
-# List available apps
-homebutler install list
-
-# Install (default port)
-homebutler install uptime-kuma
-
-# Install with custom port
-homebutler install uptime-kuma --port 8080
-
-# Check status
-homebutler install status uptime-kuma
-
-# Stop (data preserved)
-homebutler install uninstall uptime-kuma
-
-# Stop + delete everything
-homebutler install purge uptime-kuma
-```
-
-### How it works
-
-```
-~/.homebutler/apps/
-  └── uptime-kuma/
-       ├── docker-compose.yml   ← auto-generated, editable
-       └── data/                ← persistent data (bind mount)
-```
-
-- **Pre-checks** — Verifies docker is installed/running, port is available, no duplicate containers
-- **Compose-based** — Each app gets its own `docker-compose.yml` you can inspect and customize
-- **Data safety** — `uninstall` stops containers but keeps your data; `purge` removes everything
-- **Cross-platform** — Auto-detects docker socket (default, colima, podman)
-
-### Available apps
-
-| App | Default Port | Description |
-|-----|-------------|-------------|
-| `uptime-kuma` | 3001 | Self-hosted monitoring tool |
-| `vaultwarden` | 8080 | Bitwarden-compatible password manager |
-| `filebrowser` | 8081 | Web-based file manager |
-| `it-tools` | 8082 | Developer utilities (JSON, Base64, Hash, etc.) |
-| `gitea` | 3002 | Lightweight self-hosted Git service |
-
-> More apps coming soon. Want to add one? See [Contributing](CONTRIBUTING.md).
 
 ## Installation
 
