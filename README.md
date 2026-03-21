@@ -20,7 +20,8 @@ A single-binary CLI + MCP server that lets you monitor servers, control Docker, 
 </p>
 <p align="center"><em>▶️ Click to watch demo — Alert → Diagnose → Fix, all from chat (34s)</em></p>
 
-## Architecture
+<details>
+<summary>📐 Architecture</summary>
 
 > **Goal: Engineers manage servers from chat — not SSH.**
 >
@@ -80,19 +81,22 @@ All three call the same `internal/` packages — no code duplication.
 
 **Goal:** Full AI ChatOps — infrastructure that manages itself.
 
+</details>
+
 ## Features
 
-- **Web Dashboard** — Beautiful dark-themed web UI with `homebutler serve`
-- **TUI Dashboard** — Real-time terminal monitoring with `homebutler watch` (btop-style)
+- **App Install** — Deploy self-hosted apps with one command (`uptime-kuma`, `vaultwarden`, `gitea`, and more)
 - **System Status** — CPU, memory, disk, uptime at a glance
 - **Docker Management** — List, restart, stop, logs for containers
+- **Multi-server** — Manage remote servers over SSH (key & password auth)
+- **Alerts** — Get notified when resources exceed thresholds
+- **Backup & Restore** — One-command Docker volume backup with compose + env files
+- **MCP Server** — Works with Claude Desktop, ChatGPT, Cursor, and any MCP client
+- **Web Dashboard** — Beautiful dark-themed web UI with `homebutler serve`
+- **TUI Dashboard** — Real-time terminal monitoring with `homebutler watch` (btop-style)
 - **Wake-on-LAN** — Power on machines remotely
 - **Port Scanner** — See what's listening and which process owns it
 - **Network Scan** — Discover devices on your LAN
-- **Alerts** — Get notified when resources exceed thresholds
-- **Backup & Restore** — One-command Docker volume backup with compose + env files
-- **Multi-server** — Manage remote servers over SSH (key & password auth)
-- **MCP Server** — Works with Claude Desktop, ChatGPT, Cursor, and any MCP client
 - **JSON Output** — Pipe-friendly, perfect for AI assistants to parse
 
 ## Why homebutler?
@@ -130,6 +134,14 @@ This is what homebutler + [OpenClaw](https://github.com/openclaw/openclaw) looks
 | Resource usage | ~10MB, 0% idle | Medium | High | High |
 
 </details>
+
+### 📦 One-Command App Install
+
+<p align="center">
+  <img src="assets/install-demo.gif" alt="homebutler install demo" width="900">
+</p>
+
+> **`homebutler install uptime-kuma`** — Deploy self-hosted apps in seconds. Pre-checks Docker, ports, and duplicates. Generates `docker-compose.yml` automatically. [See all available apps →](#app-install)
 
 ## Demo
 
@@ -338,10 +350,6 @@ Works with Claude Desktop, ChatGPT, Cursor, Windsurf, and any MCP client.
 ## App Install
 
 Deploy self-hosted apps with a single command. Each app runs via **docker compose** with automatic pre-checks, health verification, and clean lifecycle management.
-
-<p align="center">
-  <img src="assets/install-demo.gif" alt="homebutler install demo" width="900">
-</p>
 
 ```bash
 # List available apps
