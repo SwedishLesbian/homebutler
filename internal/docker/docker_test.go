@@ -208,6 +208,105 @@ func TestActionResultStruct(t *testing.T) {
 	}
 }
 
+func TestParseDockerPS(t *testing.T) {
+	input := "a1b2c3d4e5f6\tnginx\tnginx:1.25\tUp 4 days\trunning\t0.0.0.0:80->80/tcp\n" +
+		"b2c3d4e5f6a1\tpostgres\tpostgres:16\tUp 4 days\trunning\t5432/tcp\n" +
+		"c3d4e5f6a1b2\tbackup\trestic:0.16\tExited (0) 6 hours ago\texited\t\n"
+
+	containers := parseDockerPS(input)
+	if len(containers) != 3 {
+		t.Fatalf("expected 3 containers, got %d", len(containers))
+	}
+
+	// Running container
+	if containers[0].Name != "nginx" {
+		t.Errorf("expected nginx, got %s", containers[0].Name)
+	}
+	if containers[0].Status != "Running · 4d" {
+		t.Errorf("expected 'Running · 4d', got %s", containers[0].Status)
+	}
+	if containers[0].Ports != "0.0.0.0:80->80/tcp" {
+		t.Errorf("expected ports, got %s", containers[0].Ports)
+	}
+	if containers[0].ID != "a1b2c3d4e5f6" {
+		t.Errorf("expected ID a1b2c3d4e5f6, got %s", containers[0].ID)
+	}
+
+	// Exited container
+	if containers[2].Name != "backup" {
+		t.Errorf("expected backup, got %s", containers[2].Name)
+	}
+	if containers[2].State != "exited" {
+		t.Errorf("expected exited state, got %s", containers[2].State)
+	}
+	if containers[2].Status != "Stopped · 6h ago" {
+		t.Errorf("expected 'Stopped · 6h ago', got %s", containers[2].Status)
+	}
+}
+
+func TestParseDockerPS_Empty(t *testing.T) {
+	containers := parseDockerPS("")
+	if len(containers) != 0 {
+		t.Fatalf("expected 0 containers, got %d", len(containers))
+	}
+}
+
+func TestParseDockerPS_ShortFields(t *testing.T) {
+	// Lines with less than 5 fields should be skipped
+	input := "a1b2c3\tnginx\tnginx:latest\n"
+	containers := parseDockerPS(input)
+	if len(containers) != 0 {
+		t.Fatalf("expected 0 containers for short fields, got %d", len(containers))
+	}
+}
+
+func TestParseDockerPS_NoPorts(t *testing.T) {
+	input := "a1b2c3d4e5f6\tredis\tredis:7\tUp 2 days\trunning\n"
+	containers := parseDockerPS(input)
+	if len(containers) != 1 {
+		t.Fatalf("expected 1 container, got %d", len(containers))
+	}
+	if containers[0].Ports != "" {
+		t.Errorf("expected empty ports, got %s", containers[0].Ports)
+	}
+}
+
+func TestParseDockerPS_LongID(t *testing.T) {
+	// ID longer than 12 chars should be truncated
+	input := "a1b2c3d4e5f6a1b2c3d4e5f6\tnginx\tnginx:latest\tUp 1 hour\trunning\t80/tcp\n"
+	containers := parseDockerPS(input)
+	if len(containers) != 1 {
+		t.Fatalf("expected 1 container, got %d", len(containers))
+	}
+	if containers[0].ID != "a1b2c3d4e5f6" {
+		t.Errorf("expected truncated ID, got %s", containers[0].ID)
+	}
+}
+
+func TestParseDockerPS_MultipleStates(t *testing.T) {
+	input := "abc123456789\tapp1\tapp:v1\tUp 2 weeks\trunning\t8080/tcp\n" +
+		"def123456789\tapp2\tapp:v2\tExited (137) 2 days ago\texited\t\n" +
+		"ghi123456789\tapp3\tapp:v3\tPaused\tpaused\t\n"
+
+	containers := parseDockerPS(input)
+	if len(containers) != 3 {
+		t.Fatalf("expected 3 containers, got %d", len(containers))
+	}
+	if containers[0].State != "running" {
+		t.Errorf("expected running, got %s", containers[0].State)
+	}
+	if containers[1].State != "exited" {
+		t.Errorf("expected exited, got %s", containers[1].State)
+	}
+	if containers[2].State != "paused" {
+		t.Errorf("expected paused, got %s", containers[2].State)
+	}
+	// Paused should preserve raw status
+	if containers[2].Status != "Paused" {
+		t.Errorf("expected 'Paused', got %s", containers[2].Status)
+	}
+}
+
 func TestLogsResultStruct(t *testing.T) {
 	r := LogsResult{
 		Container: "nginx",

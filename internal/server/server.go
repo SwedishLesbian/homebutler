@@ -28,14 +28,19 @@ import (
 //go:embed all:web_dist
 var webFS embed.FS
 
+// RemoteRunner executes a homebutler command on a remote server via SSH.
+// Default implementation uses remote.Run.
+type RemoteRunner func(srv *config.ServerConfig, args ...string) ([]byte, error)
+
 // Server is the HTTP server for the homebutler web dashboard.
 type Server struct {
-	cfg     *config.Config
-	host    string
-	port    int
-	demo    bool
-	version string
-	mux     *http.ServeMux
+	cfg          *config.Config
+	host         string
+	port         int
+	demo         bool
+	version      string
+	mux          *http.ServeMux
+	remoteRunner RemoteRunner
 }
 
 // New creates a new Server with the given config, host, port, and version.
@@ -44,7 +49,7 @@ func New(cfg *config.Config, host string, port int, demo ...bool) *Server {
 	if host == "" {
 		host = "127.0.0.1"
 	}
-	s := &Server{cfg: cfg, host: host, port: port, demo: d, version: "dev", mux: http.NewServeMux()}
+	s := &Server{cfg: cfg, host: host, port: port, demo: d, version: "dev", mux: http.NewServeMux(), remoteRunner: remote.Run}
 	s.routes()
 	return s
 }
@@ -169,7 +174,7 @@ func (s *Server) isRemoteRequest(r *http.Request) (*config.ServerConfig, bool) {
 
 // forwardRemote runs a homebutler subcommand on a remote server via SSH and writes the JSON response.
 func (s *Server) forwardRemote(w http.ResponseWriter, srv *config.ServerConfig, args ...string) {
-	out, err := remote.Run(srv, args...)
+	out, err := s.remoteRunner(srv, args...)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
@@ -211,7 +216,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleDocker(w http.ResponseWriter, r *http.Request) {
 	if srv, ok := s.isRemoteRequest(r); ok {
-		out, err := remote.Run(srv, "docker", "list", "--json")
+		out, err := s.remoteRunner(srv, "docker", "list", "--json")
 		if err != nil {
 			writeJSON(w, map[string]any{
 				"available":  false,
@@ -418,7 +423,7 @@ func (s *Server) handleServerStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Run remotely via SSH
-	out, err := remote.Run(srv, "status", "--json")
+	out, err := s.remoteRunner(srv, "status", "--json")
 	if err != nil {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return

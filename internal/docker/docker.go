@@ -29,28 +29,7 @@ func List() ([]Container, error) {
 		return nil, fmt.Errorf("docker daemon is not running: %w", err)
 	}
 
-	containers := make([]Container, 0)
-	for _, line := range splitLines(out) {
-		if line == "" {
-			continue
-		}
-		fields := splitTabs(line)
-		if len(fields) < 5 {
-			continue
-		}
-		c := Container{
-			ID:     fields[0][:12],
-			Name:   fields[1],
-			Image:  fields[2],
-			Status: friendlyStatus(fields[3], fields[4]),
-			State:  fields[4],
-		}
-		if len(fields) > 5 {
-			c.Ports = fields[5]
-		}
-		containers = append(containers, c)
-	}
-	return containers, nil
+	return parseDockerPS(out), nil
 }
 
 // ActionResult holds the result of a docker action.
@@ -104,6 +83,36 @@ func Logs(name string, lines string) (*LogsResult, error) {
 		return nil, fmt.Errorf("failed to get logs for %s: %w", name, err)
 	}
 	return &LogsResult{Container: name, Lines: lines, Logs: out}, nil
+}
+
+// parseDockerPS parses the output of docker ps -a --format with tab separators.
+func parseDockerPS(out string) []Container {
+	containers := make([]Container, 0)
+	for _, line := range splitLines(out) {
+		if line == "" {
+			continue
+		}
+		fields := splitTabs(line)
+		if len(fields) < 5 {
+			continue
+		}
+		id := fields[0]
+		if len(id) > 12 {
+			id = id[:12]
+		}
+		c := Container{
+			ID:     id,
+			Name:   fields[1],
+			Image:  fields[2],
+			Status: friendlyStatus(fields[3], fields[4]),
+			State:  fields[4],
+		}
+		if len(fields) > 5 {
+			c.Ports = fields[5]
+		}
+		containers = append(containers, c)
+	}
+	return containers
 }
 
 var exitedRe = regexp.MustCompile(`(?i)exited\s*\(\d+\)\s*(.+)\s*ago`)
