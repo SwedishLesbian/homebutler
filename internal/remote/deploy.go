@@ -35,62 +35,78 @@ type DeployResult struct {
 func Deploy(server *config.ServerConfig, localBin string) (*DeployResult, error) {
 	result := &DeployResult{Server: server.Name}
 
-	// Connect
 	client, err := connect(server)
 	if err != nil {
 		return nil, fmt.Errorf("ssh connect to %s: %w", server.Name, err)
 	}
 	defer client.Close()
 
-	// Detect remote arch
 	remoteOS, remoteArch, err := detectRemoteArch(client)
 	if err != nil {
 		return nil, fmt.Errorf("detect arch on %s: %w", server.Name, err)
 	}
 	result.Arch = remoteOS + "/" + remoteArch
 
-	// Determine install path on remote: try /usr/local/bin, fallback to ~/.local/bin
 	installDir, err := detectInstallDir(client)
 	if err != nil {
 		return nil, fmt.Errorf("detect install dir on %s: %w", server.Name, err)
 	}
 
+	isWindows := remoteOS == "windows"
+	binaryName := "homebutler"
+	if isWindows {
+		binaryName = "homebutler.exe"
+	}
+	remotePath := installDir + string(os.PathSeparator) + binaryName
+
 	if localBin != "" {
-		// Air-gapped: copy local file
 		result.Source = "local"
 		data, err := os.ReadFile(localBin)
 		if err != nil {
 			return nil, fmt.Errorf("read local binary: %w", err)
 		}
-		if err := scpUpload(client, data, installDir+"/homebutler", 0755); err != nil {
+		if err := scpUpload(client, data, remotePath, 0755); err != nil {
 			return nil, fmt.Errorf("upload to %s: %w", server.Name, err)
 		}
 	} else {
-		// Download from GitHub
 		result.Source = "github"
 		data, err := downloadRelease(remoteOS, remoteArch)
 		if err != nil {
 			return nil, fmt.Errorf("download for %s/%s: %w\n\nFor air-gapped environments, use:\n  homebutler deploy --server %s --local ./homebutler-%s-%s",
 				remoteOS, remoteArch, err, server.Name, remoteOS, remoteArch)
 		}
-		if err := scpUpload(client, data, installDir+"/homebutler", 0755); err != nil {
+		if err := scpUpload(client, data, remotePath, 0755); err != nil {
 			return nil, fmt.Errorf("upload to %s: %w", server.Name, err)
 		}
 	}
 
-	// Ensure PATH includes install dir and verify
-	verifyCmd := fmt.Sprintf("export PATH=$PATH:%s; homebutler version", installDir)
+	// Set executable permissions
+	if isWindows {
+		runSession(client, fmt.Sprintf(`icacls "%s" /grant Everyone:RX 2>nul`, remotePath))
+	} else {
+		runSession(client, "chmod +x "+remotePath)
+	}
+
+	// Verify installation
+	var verifyCmd string
+	if isWindows {
+		verifyCmd = fmt.Sprintf(`powershell -NoProfile -Command "& '%s' version"`, remotePath)
+	} else {
+		verifyCmd = fmt.Sprintf("export PATH=$PATH:%s; %s version", installDir, binaryName)
+	}
+
 	if err := runSession(client, verifyCmd); err != nil {
 		result.Status = "error"
 		result.Message = "uploaded but verification failed: " + err.Error()
 		return result, nil
 	}
 
-	// Add to PATH permanently if needed
-	ensurePath(client, installDir)
+	if !isWindows {
+		ensurePath(client, installDir)
+	}
 
 	result.Status = "ok"
-	result.Message = fmt.Sprintf("installed to %s/homebutler (%s/%s)", installDir, remoteOS, remoteArch)
+	result.Message = fmt.Sprintf("installed to %s (%s/%s)", remotePath, remoteOS, remoteArch)
 	return result, nil
 }
 
@@ -111,19 +127,40 @@ func ValidateLocalArch(remoteOS, remoteArch string) error {
 }
 
 // detectInstallDir finds the best install location on the remote server.
-// Priority: /usr/local/bin (writable or via sudo) > ~/.local/bin
+// Windows: %LOCALAPPDATA%\homebutler > %USERPROFILE%\bin
+// Unix: /usr/local/bin (writable or via sudo) > ~/.local/bin
 func detectInstallDir(client *ssh.Client) (string, error) {
-	// Try /usr/local/bin
+	session, err := client.NewSession()
+	if err != nil {
+		return "", err
+	}
+	defer session.Close()
+
+	// Check if Windows
+	out, _ := session.CombinedOutput("TERM=dumb uname -s 2>/dev/null")
+	osName := strings.ToLower(strings.TrimSpace(string(out)))
+
+	if osName == "windows" || strings.Contains(osName, "win") {
+		// Windows paths
+		if err := runSession(client, `if exist "C:\Program Files\homebutler" echo exists`); err == nil {
+			return `C:\Program Files\homebutler`, nil
+		}
+		if err := runSession(client, `if exist "%LOCALAPPDATA%\homebutler" echo exists`); err == nil {
+			runSession(client, `if not exist "%LOCALAPPDATA%\homebutler" mkdir "%LOCALAPPDATA%\homebutler"`)
+			return `%LOCALAPPDATA%\homebutler`, nil
+		}
+		runSession(client, `mkdir "%USERPROFILE%\bin" 2>nul`)
+		return `%USERPROFILE%\bin`, nil
+	}
+
+	// Unix paths
 	if err := runSession(client, "test -w /usr/local/bin"); err == nil {
 		return "/usr/local/bin", nil
 	}
-	// Try with sudo
 	if err := runSession(client, "sudo -n test -w /usr/local/bin 2>/dev/null"); err == nil {
-		// Prep: sudo copy will be needed
 		runSession(client, "sudo mkdir -p /usr/local/bin")
 		return "/usr/local/bin", nil
 	}
-	// Fallback: ~/.local/bin
 	runSession(client, "mkdir -p $HOME/.local/bin")
 	return "$HOME/.local/bin", nil
 }
@@ -160,20 +197,52 @@ func detectRemoteArch(client *ssh.Client) (string, string, error) {
 	}
 	defer session.Close()
 
-	out, err := session.CombinedOutput("uname -s -m")
-	if err != nil {
-		return "", "", err
+	// Try uname first (Linux/macOS)
+	out, err := session.CombinedOutput("TERM=dumb uname -s -m 2>/dev/null")
+	if err == nil {
+		parts := strings.Fields(strings.TrimSpace(string(out)))
+		if len(parts) >= 2 {
+			osName := strings.ToLower(parts[0])
+			arch := normalizeArch(parts[1])
+			return osName, arch, nil
+		}
 	}
 
-	parts := strings.Fields(strings.TrimSpace(string(out)))
-	if len(parts) < 2 {
-		return "", "", fmt.Errorf("unexpected uname output: %s", string(out))
+	// Fallback: try PowerShell for Windows
+	session2, err := client.NewSession()
+	if err == nil {
+		defer session2.Close()
+		out2, err := session2.CombinedOutput(`powershell -NoProfile -Command "[Environment]::OSVersion.Platform; if($env:PROCESSOR_ARCHITECTURE){$env:PROCESSOR_ARCHITECTURE}else{'AMD64'}"`)
+		if err == nil {
+			output := strings.TrimSpace(string(out2))
+			if strings.Contains(output, "Win32NT") || strings.Contains(output, "WinNT") {
+				arch := "amd64"
+				if strings.Contains(output, "ARM64") {
+					arch = "arm64"
+				}
+				return "windows", arch, nil
+			}
+		}
 	}
 
-	osName := strings.ToLower(parts[0]) // Linux -> linux, Darwin -> darwin
-	arch := normalizeArch(parts[1])
+	// Final fallback: try systeminfo for Windows Server
+	session3, err := client.NewSession()
+	if err == nil {
+		defer session3.Close()
+		out3, err := session3.CombinedOutput("systeminfo 2>/dev/null | findstr /C:\"OS Name\" /C:\"Processor(s)\" || echo")
+		if err == nil {
+			output := strings.ToLower(string(out3))
+			if strings.Contains(output, "windows") {
+				arch := "amd64"
+				if strings.Contains(output, "arm64") {
+					arch = "arm64"
+				}
+				return "windows", arch, nil
+			}
+		}
+	}
 
-	return osName, arch, nil
+	return "", "", fmt.Errorf("cannot detect OS/arch: uname failed, no PowerShell or systeminfo available")
 }
 
 func normalizeArch(arch string) string {
@@ -187,14 +256,38 @@ func normalizeArch(arch string) string {
 	}
 }
 
+var assetSuffixes = map[string]string{
+	"linux/amd64":   "linux_amd64",
+	"linux/arm64":   "linux_arm64",
+	"darwin/amd64":  "darwin_amd64",
+	"darwin/arm64":  "darwin_arm64",
+	"windows/amd64": "windows_amd64",
+	"windows/arm64": "windows_arm64",
+}
+
 func downloadRelease(osName, arch string, version ...string) ([]byte, error) {
-	var filename, url string
+	var tagName, filename, url string
+
 	if len(version) > 0 && version[0] != "" {
-		filename = fmt.Sprintf("homebutler_%s_%s_%s.tar.gz", version[0], osName, arch)
-		url = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/download/v%s/%s", version[0], filename)
+		tagName = "v" + version[0]
 	} else {
-		filename = fmt.Sprintf("homebutler_%s_%s.tar.gz", osName, arch)
-		url = releaseURL + "/" + filename
+		tagName, _ = FetchLatestVersion()
+		if tagName == "" {
+			tagName = "latest"
+		}
+	}
+
+	suffix := assetSuffixes[osName+"/"+arch]
+	if suffix == "" {
+		return nil, fmt.Errorf("unsupported platform: %s/%s", osName, arch)
+	}
+
+	if strings.HasPrefix(tagName, "v") {
+		filename = fmt.Sprintf("homebutler_%s_%s.tar.gz", strings.TrimPrefix(tagName, "v"), suffix)
+		url = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/download/%s/%s", tagName, filename)
+	} else {
+		filename = fmt.Sprintf("homebutler_%s_%s.tar.gz", tagName, suffix)
+		url = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/%s/download/%s", tagName, filename)
 	}
 
 	resp, err := http.Get(url)
@@ -207,13 +300,11 @@ func downloadRelease(osName, arch string, version ...string) ([]byte, error) {
 		return nil, fmt.Errorf("download failed: HTTP %d for %s", resp.StatusCode, url)
 	}
 
-	// Download tar.gz
 	tarData, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("read response: %w", err)
 	}
 
-	// Verify checksum
 	if err := verifyChecksum(tarData, filename, version...); err != nil {
 		return nil, fmt.Errorf("checksum verification failed: %w", err)
 	}

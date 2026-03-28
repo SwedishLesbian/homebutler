@@ -207,12 +207,20 @@ func remoteGetVersion(client *ssh.Client) (string, error) {
 	}
 	defer session.Close()
 
-	out, err := session.CombinedOutput("homebutler version 2>/dev/null || $HOME/.local/bin/homebutler version")
+	// Check if Windows first
+	outCheck, _ := session.CombinedOutput("TERM=dumb uname -s 2>/dev/null")
+	isWindows := strings.Contains(strings.ToLower(string(outCheck)), "win")
+
+	var out []byte
+	if isWindows {
+		out, err = session.CombinedOutput(`powershell -NoProfile -Command "& 'C:\Program Files\homebutler\homebutler.exe' version 2>$null; if (-not $?) { & '$env:LOCALAPPDATA\homebutler\homebutler.exe' version }"`)
+	} else {
+		out, err = session.CombinedOutput("homebutler version 2>/dev/null || $HOME/.local/bin/homebutler version")
+	}
 	if err != nil {
 		return "", fmt.Errorf("homebutler not found on remote")
 	}
 
-	// Parse "homebutler 0.7.1 (built ...)" → "0.7.1"
 	parts := strings.Fields(strings.TrimSpace(string(out)))
 	if len(parts) >= 2 {
 		return parts[1], nil
@@ -228,7 +236,15 @@ func remoteWhich(client *ssh.Client) (string, error) {
 	}
 	defer session.Close()
 
-	out, err := session.CombinedOutput("which homebutler 2>/dev/null || echo $HOME/.local/bin/homebutler")
+	outCheck, _ := session.CombinedOutput("TERM=dumb uname -s 2>/dev/null")
+	isWindows := strings.Contains(strings.ToLower(string(outCheck)), "win")
+
+	var out []byte
+	if isWindows {
+		out, err = session.CombinedOutput(`where homebutler 2>nul || echo "%LOCALAPPDATA%\homebutler\homebutler.exe"`)
+	} else {
+		out, err = session.CombinedOutput("which homebutler 2>/dev/null || echo $HOME/.local/bin/homebutler")
+	}
 	if err != nil {
 		return "", fmt.Errorf("cannot locate homebutler")
 	}

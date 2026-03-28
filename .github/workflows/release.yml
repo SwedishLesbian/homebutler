@@ -60,6 +60,7 @@ jobs:
           SHA_DARWIN_AMD64=$(grep "darwin_amd64" checksums.txt | awk '{print $1}')
           SHA_LINUX_ARM64=$(grep "linux_arm64" checksums.txt | awk '{print $1}')
           SHA_LINUX_AMD64=$(grep "linux_amd64" checksums.txt | awk '{print $1}')
+          SHA_WINDOWS_AMD64=$(grep "windows_amd64" checksums.txt | awk '{print $1}')
 
           # Generate formula
           cat > homebutler.rb << EOF
@@ -89,6 +90,11 @@ jobs:
                 url "https://github.com/${REPO}/releases/download/v${TAG}/homebutler_${TAG}_linux_amd64.tar.gz"
                 sha256 "${SHA_LINUX_AMD64}"
               end
+            end
+
+            on_windows do
+              url "https://github.com/${REPO}/releases/download/v${TAG}/homebutler_${TAG}_windows_amd64.tar.gz"
+              sha256 "${SHA_WINDOWS_AMD64}"
             end
 
             def install
