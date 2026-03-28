@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/config"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -30,7 +30,7 @@ type UpgradeReport struct {
 
 // FetchLatestVersion queries GitHub API for the latest release tag.
 func FetchLatestVersion() (string, error) {
-	req, err := http.NewRequest("GET", "https://api.github.com/repos/Higangssh/homebutler/releases/latest", nil)
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/swedishlesbian/homebutler/releases/latest", nil)
 	if err != nil {
 		return "", err
 	}

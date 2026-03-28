@@ -48,8 +48,8 @@ jobs:
           fi
 
           TAG=${GITHUB_REF#refs/tags/v}
-          REPO="Higangssh/homebutler"
-          TAP_REPO="Higangssh/homebrew-homebutler"
+          REPO="swedishlesbian/homebutler"
+          TAP_REPO="swedishlesbian/homebrew-homebutler"
 
           # Download checksums
           CHECKSUMS_URL="https://github.com/${REPO}/releases/download/v${TAG}/checksums.txt"

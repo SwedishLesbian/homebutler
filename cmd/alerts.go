@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Higangssh/homebutler/internal/alerts"
+	"github.com/swedishlesbian/homebutler/internal/alerts"
 	"github.com/spf13/cobra"
 )
 

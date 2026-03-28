@@ -35,9 +35,9 @@ release:
     homebutler upgrade
 
     # Fresh install
-    brew install Higangssh/homebutler/homebutler
+    brew install swedishlesbian/homebutler/homebutler
     # or
-    curl -fsSL https://raw.githubusercontent.com/Higangssh/homebutler/main/install.sh | sh
+    curl -fsSL https://raw.githubusercontent.com/swedishlesbian/homebutler/main/install.sh | sh
     # or
     npm install -g homebutler
     ```
@@ -48,9 +48,9 @@ release:
     ```
   footer: |
     ---
-    **Full Changelog**: https://github.com/Higangssh/homebutler/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/swedishlesbian/homebutler/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-    **All install methods**: See [README](https://github.com/Higangssh/homebutler#installation)
+    **All install methods**: See [README](https://github.com/swedishlesbian/homebutler#installation)
 
 changelog:
   sort: asc

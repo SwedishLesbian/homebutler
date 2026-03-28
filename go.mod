@@ -1,4 +1,4 @@
-module github.com/Higangssh/homebutler
+module github.com/swedishlesbian/homebutler
 
 go 1.25.0
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/util"
 )
 
 // installedApp tracks where an app is installed.

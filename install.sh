@@ -2,9 +2,9 @@
 set -e
 
 # homebutler installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/Higangssh/homebutler/main/install.sh | sh
+# Usage: curl -fsSL https://raw.githubusercontent.com/swedishlesbian/homebutler/main/install.sh | sh
 
-REPO="Higangssh/homebutler"
+REPO="swedishlesbian/homebutler"
 INSTALL_DIR="/usr/local/bin"
 BINARY="homebutler"
 

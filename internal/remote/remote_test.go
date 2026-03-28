@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/config"
 )
 
 // --- normalizeArch tests ---

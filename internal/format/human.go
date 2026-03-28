@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Higangssh/homebutler/internal/alerts"
-	"github.com/Higangssh/homebutler/internal/docker"
-	"github.com/Higangssh/homebutler/internal/network"
-	"github.com/Higangssh/homebutler/internal/ports"
-	"github.com/Higangssh/homebutler/internal/system"
+	"github.com/swedishlesbian/homebutler/internal/alerts"
+	"github.com/swedishlesbian/homebutler/internal/docker"
+	"github.com/swedishlesbian/homebutler/internal/network"
+	"github.com/swedishlesbian/homebutler/internal/ports"
+	"github.com/swedishlesbian/homebutler/internal/system"
 )
 
 // Status formats system status for human reading.

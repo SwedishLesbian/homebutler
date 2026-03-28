@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/util"
 )
 
 // RestoreResult is returned after a successful restore.

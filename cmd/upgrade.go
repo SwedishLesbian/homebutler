@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Higangssh/homebutler/internal/remote"
+	"github.com/swedishlesbian/homebutler/internal/remote"
 	"github.com/spf13/cobra"
 )
 

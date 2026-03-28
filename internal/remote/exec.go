@@ -8,8 +8,8 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/Higangssh/homebutler/internal/config"
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/util"
 	"golang.org/x/crypto/ssh"
 )
 

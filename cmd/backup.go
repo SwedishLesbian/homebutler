@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/Higangssh/homebutler/internal/backup"
+	"github.com/swedishlesbian/homebutler/internal/backup"
 	"github.com/spf13/cobra"
 )
 

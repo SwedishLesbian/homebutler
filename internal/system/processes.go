@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/util"
 )
 
 // ProcessInfo holds information about a running process.

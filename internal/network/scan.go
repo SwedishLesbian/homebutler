@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/util"
 )
 
 type Device struct {

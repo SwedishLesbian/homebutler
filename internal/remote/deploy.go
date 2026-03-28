@@ -11,13 +11,13 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/Higangssh/homebutler/internal/config"
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/util"
 	"golang.org/x/crypto/ssh"
 )
 
 const (
-	releaseURL = "https://github.com/Higangssh/homebutler/releases/latest/download"
+	releaseURL = "https://github.com/swedishlesbian/homebutler/releases/latest/download"
 )
 
 // DeployResult holds the result of a deploy operation.
@@ -284,10 +284,10 @@ func downloadRelease(osName, arch string, version ...string) ([]byte, error) {
 
 	if strings.HasPrefix(tagName, "v") {
 		filename = fmt.Sprintf("homebutler_%s_%s.tar.gz", strings.TrimPrefix(tagName, "v"), suffix)
-		url = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/download/%s/%s", tagName, filename)
+		url = fmt.Sprintf("https://github.com/swedishlesbian/homebutler/releases/download/%s/%s", tagName, filename)
 	} else {
 		filename = fmt.Sprintf("homebutler_%s_%s.tar.gz", tagName, suffix)
-		url = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/%s/download/%s", tagName, filename)
+		url = fmt.Sprintf("https://github.com/swedishlesbian/homebutler/releases/%s/download/%s", tagName, filename)
 	}
 
 	resp, err := http.Get(url)
@@ -316,7 +316,7 @@ func downloadRelease(osName, arch string, version ...string) ([]byte, error) {
 func verifyChecksum(data []byte, filename string, version ...string) error {
 	var checksumsURL string
 	if len(version) > 0 && version[0] != "" {
-		checksumsURL = fmt.Sprintf("https://github.com/Higangssh/homebutler/releases/download/v%s/checksums.txt", version[0])
+		checksumsURL = fmt.Sprintf("https://github.com/swedishlesbian/homebutler/releases/download/v%s/checksums.txt", version[0])
 	} else {
 		checksumsURL = releaseURL + "/checksums.txt"
 	}

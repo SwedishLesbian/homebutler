@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/config"
 	"gopkg.in/yaml.v3"
 )
 

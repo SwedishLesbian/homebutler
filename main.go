@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Higangssh/homebutler/cmd"
+	"github.com/swedishlesbian/homebutler/cmd"
 )
 
 var (

@@ -3,7 +3,7 @@ package cmd
 import (
 	"time"
 
-	"github.com/Higangssh/homebutler/internal/network"
+	"github.com/swedishlesbian/homebutler/internal/network"
 	"github.com/spf13/cobra"
 )
 

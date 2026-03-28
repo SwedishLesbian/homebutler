@@ -1,8 +1,8 @@
 package alerts
 
 import (
-	"github.com/Higangssh/homebutler/internal/config"
-	"github.com/Higangssh/homebutler/internal/system"
+	"github.com/swedishlesbian/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/system"
 )
 
 type AlertResult struct {

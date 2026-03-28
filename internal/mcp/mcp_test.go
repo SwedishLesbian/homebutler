@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/config"
 )
 
 func newTestServer() (*Server, *bytes.Buffer) {

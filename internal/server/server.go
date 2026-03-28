@@ -16,13 +16,13 @@ import (
 
 	"path/filepath"
 
-	"github.com/Higangssh/homebutler/internal/alerts"
-	"github.com/Higangssh/homebutler/internal/config"
-	"github.com/Higangssh/homebutler/internal/docker"
-	"github.com/Higangssh/homebutler/internal/ports"
-	"github.com/Higangssh/homebutler/internal/remote"
-	"github.com/Higangssh/homebutler/internal/system"
-	"github.com/Higangssh/homebutler/internal/wake"
+	"github.com/swedishlesbian/homebutler/internal/alerts"
+	"github.com/swedishlesbian/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/docker"
+	"github.com/swedishlesbian/homebutler/internal/ports"
+	"github.com/swedishlesbian/homebutler/internal/remote"
+	"github.com/swedishlesbian/homebutler/internal/system"
+	"github.com/swedishlesbian/homebutler/internal/wake"
 )
 
 //go:embed all:web_dist

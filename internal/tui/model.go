@@ -8,9 +8,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/Higangssh/homebutler/internal/config"
-	"github.com/Higangssh/homebutler/internal/docker"
-	"github.com/Higangssh/homebutler/internal/system"
+	"github.com/swedishlesbian/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/docker"
+	"github.com/swedishlesbian/homebutler/internal/system"
 )
 
 const refreshInterval = 2 * time.Second

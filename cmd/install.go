@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Higangssh/homebutler/internal/install"
+	"github.com/swedishlesbian/homebutler/internal/install"
 	"github.com/spf13/cobra"
 )
 

@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/Higangssh/homebutler/internal/system"
+	"github.com/swedishlesbian/homebutler/internal/system"
 	"github.com/spf13/cobra"
 )
 

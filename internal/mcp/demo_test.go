@@ -3,7 +3,7 @@ package mcp
 import (
 	"testing"
 
-	"github.com/Higangssh/homebutler/internal/config"
+	"github.com/swedishlesbian/homebutler/internal/config"
 )
 
 func TestExecuteDemoTool_Basic(t *testing.T) {

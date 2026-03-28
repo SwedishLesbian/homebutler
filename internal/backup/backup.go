@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Higangssh/homebutler/internal/util"
+	"github.com/swedishlesbian/homebutler/internal/util"
 )
 
 // Mount represents a Docker volume or bind mount.
