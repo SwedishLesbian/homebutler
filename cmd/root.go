@@ -134,7 +134,7 @@ func runStatus(jsonOut bool) error {
 
 func runDocker(jsonOutput bool) error {
 	if len(os.Args) < 3 {
-		return fmt.Errorf("usage: homebutler docker <list|restart|stop|logs> [name]")
+		return fmt.Errorf("usage: homebutler docker <list|restart|stop|logs|stats> [name]")
 	}
 
 	switch os.Args[2] {
@@ -175,6 +175,12 @@ func runDocker(jsonOutput bool) error {
 			return err
 		}
 		return output(result, jsonOutput)
+	case "stats":
+		stats, err := docker.Stats()
+		if err != nil {
+			return err
+		}
+		return output(stats, jsonOutput)
 	default:
 		return fmt.Errorf("unknown docker command: %s", os.Args[2])
 	}
@@ -363,6 +369,8 @@ func output(data any, jsonOut bool) error {
 		fmt.Print(format.DockerList(v))
 	case *docker.ActionResult:
 		fmt.Print(format.DockerAction(v.Action, v.Container))
+	case []docker.ContainerStats:
+		fmt.Print(format.DockerStats(v))
 	case *docker.LogsResult:
 		fmt.Printf("=== %s (last %s lines) ===\n%s\n", v.Container, v.Lines, v.Logs)
 	case *alerts.AlertResult:
@@ -480,6 +488,7 @@ Commands:
   docker list         List running containers
   docker restart <n>  Restart a container
   docker stop <n>     Stop a container
+  docker stats        Show resource usage for all running containers
   docker logs <n>     Show container logs (default: 50 lines)
   wake <mac|name>     Send Wake-on-LAN magic packet
   ports               List open ports with process info

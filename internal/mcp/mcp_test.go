@@ -95,8 +95,8 @@ func TestToolsList(t *testing.T) {
 		t.Fatalf("unmarshal toolsListResult: %v", err)
 	}
 
-	if len(list.Tools) != 14 {
-		t.Errorf("expected 14 tools, got %d", len(list.Tools))
+	if len(list.Tools) != 15 {
+		t.Errorf("expected 15 tools, got %d", len(list.Tools))
 	}
 
 	expectedTools := map[string]bool{
@@ -105,6 +105,7 @@ func TestToolsList(t *testing.T) {
 		"docker_restart":    false,
 		"docker_stop":       false,
 		"docker_logs":       false,
+		"docker_stats":      false,
 		"wake":              false,
 		"open_ports":        false,
 		"network_scan":      false,
