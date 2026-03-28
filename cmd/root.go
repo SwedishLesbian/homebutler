@@ -79,6 +79,8 @@ func Execute(version, buildDate string) error {
 	switch os.Args[1] {
 	case "status":
 		return runStatus(jsonOutput)
+	case "exec":
+		return runExec(cfg)
 	case "docker":
 		return runDocker(jsonOutput)
 	case "ports":
@@ -485,6 +487,9 @@ Commands:
   init                Interactive setup wizard (creates config)
   status              System status (CPU, memory, disk, uptime)
   watch               TUI dashboard (monitors all configured servers)
+  exec <program>      Run a program on remote server(s)
+                      --server: interactive PTY session
+                      --all: batch mode (background, parallel)
   docker list         List running containers
   docker restart <n>  Restart a container
   docker stop <n>     Stop a container
