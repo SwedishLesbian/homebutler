@@ -140,6 +140,26 @@ func isFlag(s string) bool {
 	return len(s) > 1 && s[0] == '-'
 }
 
+// hasFlag checks if a flag is present in os.Args.
+func hasFlag(flag string) bool {
+	for _, arg := range os.Args {
+		if arg == flag {
+			return true
+		}
+	}
+	return false
+}
+
+// getFlag gets a flag value from os.Args.
+func getFlag(flag, defaultVal string) string {
+	for i, arg := range os.Args {
+		if arg == flag && i+1 < len(os.Args) {
+			return os.Args[i+1]
+		}
+	}
+	return defaultVal
+}
+
 // runLocalCommand runs homebutler locally and captures JSON output (for --all).
 func runLocalCommand(args []string) ([]byte, error) {
 	if len(args) == 0 {
