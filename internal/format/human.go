@@ -37,6 +37,19 @@ func DockerList(containers []docker.Container) string {
 	return b.String()
 }
 
+// DockerStats formats container stats for human reading.
+func DockerStats(stats []docker.ContainerStats) string {
+	if len(stats) == 0 {
+		return "No running containers found.\n"
+	}
+	var b strings.Builder
+	fmt.Fprintf(&b, "%-20s %-10s %-24s %-10s %-20s %-20s %s\n", "CONTAINER", "CPU %", "MEM USAGE", "MEM %", "NET I/O", "BLOCK I/O", "PIDS")
+	for _, s := range stats {
+		fmt.Fprintf(&b, "%-20s %-10s %-24s %-10s %-20s %-20s %s\n", s.Name, s.CPUPerc, s.MemUsage, s.MemPerc, s.NetIO, s.BlockIO, s.PIDs)
+	}
+	return b.String()
+}
+
 // DockerAction formats docker restart/stop result.
 func DockerAction(action, container string) string {
 	return fmt.Sprintf("✅ %s: %s\n", action, container)

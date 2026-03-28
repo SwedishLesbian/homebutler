@@ -307,6 +307,118 @@ func TestParseDockerPS_MultipleStates(t *testing.T) {
 	}
 }
 
+// --- ContainerStats tests ---
+
+func TestContainerStatsStruct(t *testing.T) {
+	s := ContainerStats{
+		ID:       "a1b2c3d4e5f6",
+		Name:     "nginx",
+		CPUPerc:  "0.50%",
+		MemUsage: "10.5MiB / 1.94GiB",
+		MemPerc:  "0.53%",
+		NetIO:    "1.2kB / 3.4kB",
+		BlockIO:  "0B / 0B",
+		PIDs:     "2",
+	}
+	if s.Name != "nginx" {
+		t.Errorf("Name = %q, want %q", s.Name, "nginx")
+	}
+	if s.CPUPerc != "0.50%" {
+		t.Errorf("CPUPerc = %q, want %q", s.CPUPerc, "0.50%")
+	}
+}
+
+func TestParseDockerStats_Empty(t *testing.T) {
+	stats := parseDockerStats("")
+	if len(stats) != 0 {
+		t.Fatalf("expected 0 stats, got %d", len(stats))
+	}
+}
+
+func TestParseDockerStats_Normal(t *testing.T) {
+	input := "a1b2c3d4e5f6\tnginx\t0.50%\t10.5MiB / 1.94GiB\t0.53%\t1.2kB / 3.4kB\t0B / 0B\t2\n" +
+		"b2c3d4e5f6a1\tpostgres\t1.20%\t256MiB / 1.94GiB\t12.89%\t5.6MB / 7.8MB\t100MB / 50MB\t15\n"
+
+	stats := parseDockerStats(input)
+	if len(stats) != 2 {
+		t.Fatalf("expected 2 stats, got %d", len(stats))
+	}
+
+	if stats[0].Name != "nginx" {
+		t.Errorf("expected nginx, got %s", stats[0].Name)
+	}
+	if stats[0].CPUPerc != "0.50%" {
+		t.Errorf("expected 0.50%%, got %s", stats[0].CPUPerc)
+	}
+	if stats[0].MemUsage != "10.5MiB / 1.94GiB" {
+		t.Errorf("expected mem usage, got %s", stats[0].MemUsage)
+	}
+	if stats[0].MemPerc != "0.53%" {
+		t.Errorf("expected 0.53%%, got %s", stats[0].MemPerc)
+	}
+	if stats[0].NetIO != "1.2kB / 3.4kB" {
+		t.Errorf("expected net io, got %s", stats[0].NetIO)
+	}
+	if stats[0].BlockIO != "0B / 0B" {
+		t.Errorf("expected block io, got %s", stats[0].BlockIO)
+	}
+	if stats[0].PIDs != "2" {
+		t.Errorf("expected 2, got %s", stats[0].PIDs)
+	}
+
+	if stats[1].Name != "postgres" {
+		t.Errorf("expected postgres, got %s", stats[1].Name)
+	}
+	if stats[1].CPUPerc != "1.20%" {
+		t.Errorf("expected 1.20%%, got %s", stats[1].CPUPerc)
+	}
+}
+
+func TestParseDockerStats_ShortFields(t *testing.T) {
+	// Lines with less than 8 fields should be skipped
+	input := "a1b2c3\tnginx\t0.50%\n"
+	stats := parseDockerStats(input)
+	if len(stats) != 0 {
+		t.Fatalf("expected 0 stats for short fields, got %d", len(stats))
+	}
+}
+
+func TestParseDockerStats_LongID(t *testing.T) {
+	input := "a1b2c3d4e5f6a1b2c3d4e5f6\tnginx\t0.50%\t10MiB / 1GiB\t0.53%\t1kB / 2kB\t0B / 0B\t2\n"
+	stats := parseDockerStats(input)
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 stat, got %d", len(stats))
+	}
+	if stats[0].ID != "a1b2c3d4e5f6" {
+		t.Errorf("expected truncated ID, got %s", stats[0].ID)
+	}
+}
+
+func TestParseDockerStats_VariousFormats(t *testing.T) {
+	// Test with different memory/network formats
+	input := "abc123456789\tapp1\t99.99%\t1.5GiB / 2GiB\t75.00%\t1.2GB / 3.4GB\t500MB / 1GB\t100\n" +
+		"def123456789\tapp2\t0.00%\t512KiB / 2GiB\t0.02%\t0B / 0B\t0B / 0B\t1\n"
+
+	stats := parseDockerStats(input)
+	if len(stats) != 2 {
+		t.Fatalf("expected 2 stats, got %d", len(stats))
+	}
+	if stats[0].CPUPerc != "99.99%" {
+		t.Errorf("expected 99.99%%, got %s", stats[0].CPUPerc)
+	}
+	if stats[1].CPUPerc != "0.00%" {
+		t.Errorf("expected 0.00%%, got %s", stats[1].CPUPerc)
+	}
+}
+
+func TestParseDockerStats_TrailingNewline(t *testing.T) {
+	input := "a1b2c3d4e5f6\tnginx\t0.50%\t10MiB / 1GiB\t0.53%\t1kB / 2kB\t0B / 0B\t2\n\n"
+	stats := parseDockerStats(input)
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 stat, got %d", len(stats))
+	}
+}
+
 func TestLogsResultStruct(t *testing.T) {
 	r := LogsResult{
 		Container: "nginx",

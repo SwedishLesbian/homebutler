@@ -190,6 +190,141 @@ func TestCORSHeaders(t *testing.T) {
 	}
 }
 
+// --- Docker stats endpoint ---
+
+func TestDockerStatsEndpointReturnsJSON(t *testing.T) {
+	srv := testServer()
+	req := httptest.NewRequest("GET", "/api/docker/stats", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if ct := w.Header().Get("Content-Type"); ct != "application/json" {
+		t.Fatalf("expected application/json, got %s", ct)
+	}
+	if !json.Valid(w.Body.Bytes()) {
+		t.Fatalf("response is not valid JSON: %s", w.Body.String())
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if _, ok := result["available"]; !ok {
+		t.Fatal("missing 'available' key")
+	}
+	if _, ok := result["stats"]; !ok {
+		t.Fatal("missing 'stats' key")
+	}
+}
+
+func TestDockerStatsEndpoint_RemoteSuccess(t *testing.T) {
+	srv := testServerWithMockRemote(func(s *config.ServerConfig, args ...string) ([]byte, error) {
+		return []byte(`[{"id":"abc","name":"nginx","cpu_percent":"0.50%","mem_usage":"10MiB / 1GiB","mem_percent":"0.53%","net_io":"1kB / 2kB","block_io":"0B / 0B","pids":"2"}]`), nil
+	})
+	req := httptest.NewRequest("GET", "/api/docker/stats?server=remote1", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result["available"] != true {
+		t.Fatalf("expected available=true, got %v", result["available"])
+	}
+	stats, ok := result["stats"].([]any)
+	if !ok {
+		t.Fatal("stats should be array")
+	}
+	if len(stats) != 1 {
+		t.Fatalf("expected 1 stat, got %d", len(stats))
+	}
+}
+
+func TestDockerStatsEndpoint_RemoteError(t *testing.T) {
+	srv := testServerWithMockRemote(func(s *config.ServerConfig, args ...string) ([]byte, error) {
+		return nil, fmt.Errorf("docker not available")
+	})
+	req := httptest.NewRequest("GET", "/api/docker/stats?server=remote1", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result["available"] != false {
+		t.Fatalf("expected available=false, got %v", result["available"])
+	}
+}
+
+func TestDockerStatsEndpoint_RemoteInvalidJSON(t *testing.T) {
+	srv := testServerWithMockRemote(func(s *config.ServerConfig, args ...string) ([]byte, error) {
+		return []byte("not json"), nil
+	})
+	req := httptest.NewRequest("GET", "/api/docker/stats?server=remote1", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result["available"] != false {
+		t.Fatalf("expected available=false for invalid JSON, got %v", result["available"])
+	}
+}
+
+// --- Demo docker stats ---
+
+func TestDemoDockerStatsEndpoint(t *testing.T) {
+	srv := testDemoServer()
+	req := httptest.NewRequest("GET", "/api/docker/stats", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	if result["available"] != true {
+		t.Fatal("expected available=true in demo docker stats")
+	}
+	stats, ok := result["stats"].([]any)
+	if !ok || len(stats) != 5 {
+		t.Fatalf("expected 5 demo stats, got %v", len(stats))
+	}
+}
+
+func TestDemoDockerStatsNasBox(t *testing.T) {
+	srv := testDemoServer()
+	req := httptest.NewRequest("GET", "/api/docker/stats?server=nas-box", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var result map[string]any
+	json.Unmarshal(w.Body.Bytes(), &result)
+	stats := result["stats"].([]any)
+	if len(stats) != 2 {
+		t.Fatalf("expected 2 stats for nas-box, got %d", len(stats))
+	}
+}
+
+func TestDemoDockerStatsOfflineServer(t *testing.T) {
+	srv := testDemoServer()
+	req := httptest.NewRequest("GET", "/api/docker/stats?server=backup-nas", nil)
+	w := httptest.NewRecorder()
+	srv.Handler().ServeHTTP(w, req)
+
+	if w.Code != http.StatusBadGateway {
+		t.Fatalf("expected 502, got %d", w.Code)
+	}
+}
+
 func TestDockerEndpointReturnsJSON(t *testing.T) {
 	srv := testServer()
 	req := httptest.NewRequest("GET", "/api/docker", nil)

@@ -131,6 +131,42 @@ func (s *Server) demoDocker(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// demoDockerStats returns realistic demo container stats data.
+func (s *Server) demoDockerStats(w http.ResponseWriter, r *http.Request) {
+	name := demoServerName(r)
+
+	switch name {
+	case "":
+		writeJSON(w, map[string]any{
+			"available": true,
+			"stats": []map[string]any{
+				{"id": "a1b2c3d4e5f6", "name": "nginx", "cpu_percent": "0.50%", "mem_usage": "10.5MiB / 1.94GiB", "mem_percent": "0.53%", "net_io": "1.2kB / 3.4kB", "block_io": "0B / 0B", "pids": "2"},
+				{"id": "b2c3d4e5f6a1", "name": "postgres", "cpu_percent": "1.20%", "mem_usage": "256MiB / 1.94GiB", "mem_percent": "12.89%", "net_io": "5.6MB / 7.8MB", "block_io": "100MB / 50MB", "pids": "15"},
+				{"id": "c3d4e5f6a1b2", "name": "redis", "cpu_percent": "0.10%", "mem_usage": "8.5MiB / 1.94GiB", "mem_percent": "0.43%", "net_io": "2.3kB / 1.1kB", "block_io": "0B / 4.1kB", "pids": "5"},
+				{"id": "d4e5f6a1b2c3", "name": "grafana", "cpu_percent": "0.30%", "mem_usage": "45MiB / 1.94GiB", "mem_percent": "2.26%", "net_io": "12.3MB / 45.6MB", "block_io": "8.2MB / 0B", "pids": "12"},
+				{"id": "e5f6a1b2c3d4", "name": "prometheus", "cpu_percent": "2.10%", "mem_usage": "512MiB / 1.94GiB", "mem_percent": "25.76%", "net_io": "34.5MB / 12.3MB", "block_io": "256MB / 128MB", "pids": "8"},
+			},
+		})
+	case "nas-box":
+		writeJSON(w, map[string]any{
+			"available": true,
+			"stats": []map[string]any{
+				{"id": "aa11bb22cc33", "name": "samba", "cpu_percent": "0.80%", "mem_usage": "32MiB / 8GiB", "mem_percent": "0.39%", "net_io": "1.2GB / 3.4GB", "block_io": "500MB / 200MB", "pids": "4"},
+				{"id": "dd44ee55ff66", "name": "plex", "cpu_percent": "15.30%", "mem_usage": "1.2GiB / 8GiB", "mem_percent": "15.00%", "net_io": "2.3GB / 8.9GB", "block_io": "1.5GB / 200MB", "pids": "25"},
+			},
+		})
+	case "raspberry-pi":
+		writeJSON(w, map[string]any{
+			"available": true,
+			"stats": []map[string]any{
+				{"id": "pi11pi22pi33", "name": "pihole", "cpu_percent": "3.20%", "mem_usage": "128MiB / 4GiB", "mem_percent": "3.13%", "net_io": "45.6MB / 23.4MB", "block_io": "12MB / 8MB", "pids": "6"},
+			},
+		})
+	default:
+		demoOfflineError(w, name)
+	}
+}
+
 // demoProcesses returns realistic demo process data.
 func (s *Server) demoProcesses(w http.ResponseWriter, r *http.Request) {
 	name := demoServerName(r)

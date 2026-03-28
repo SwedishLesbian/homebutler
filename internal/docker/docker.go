@@ -169,6 +169,63 @@ func splitTabs(s string) []string {
 	return split(s, '\t')
 }
 
+// ContainerStats holds resource usage statistics for a running container.
+type ContainerStats struct {
+	ID       string `json:"id"`
+	Name     string `json:"name"`
+	CPUPerc  string `json:"cpu_percent"`
+	MemUsage string `json:"mem_usage"`
+	MemPerc  string `json:"mem_percent"`
+	NetIO    string `json:"net_io"`
+	BlockIO  string `json:"block_io"`
+	PIDs     string `json:"pids"`
+}
+
+// Stats returns resource usage statistics for all running containers.
+func Stats() ([]ContainerStats, error) {
+	// Check if docker binary exists
+	if _, lookErr := util.RunCmd("which", "docker"); lookErr != nil {
+		return nil, fmt.Errorf("docker is not installed (binary not found in PATH)")
+	}
+
+	out, err := util.DockerCmd("stats", "--no-stream",
+		"--format", "{{.ID}}\t{{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}\t{{.NetIO}}\t{{.BlockIO}}\t{{.PIDs}}")
+	if err != nil {
+		return nil, fmt.Errorf("docker daemon is not running: %w", err)
+	}
+
+	return parseDockerStats(out), nil
+}
+
+// parseDockerStats parses the output of docker stats --no-stream --format with tab separators.
+func parseDockerStats(out string) []ContainerStats {
+	stats := make([]ContainerStats, 0)
+	for _, line := range splitLines(out) {
+		if line == "" {
+			continue
+		}
+		fields := splitTabs(line)
+		if len(fields) < 8 {
+			continue
+		}
+		id := fields[0]
+		if len(id) > 12 {
+			id = id[:12]
+		}
+		stats = append(stats, ContainerStats{
+			ID:       id,
+			Name:     fields[1],
+			CPUPerc:  fields[2],
+			MemUsage: fields[3],
+			MemPerc:  fields[4],
+			NetIO:    fields[5],
+			BlockIO:  fields[6],
+			PIDs:     fields[7],
+		})
+	}
+	return stats
+}
+
 func split(s string, sep byte) []string {
 	var result []string
 	start := 0

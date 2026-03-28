@@ -237,6 +237,8 @@ func (s *Server) executeTool(name string, args map[string]any) (any, error) {
 			lines = v
 		}
 		return docker.Logs(cname, lines)
+	case "docker_stats":
+		return docker.Stats()
 	case "wake":
 		target, ok := requireString(args, "target")
 		if !ok {
@@ -336,6 +338,8 @@ func (s *Server) executeRemote(srv *config.ServerConfig, tool string, args map[s
 			lines = v
 		}
 		remoteArgs = []string{"docker", "logs", stringArg(args, "name"), lines, "--json"}
+	case "docker_stats":
+		remoteArgs = []string{"docker", "stats", "--json"}
 	case "open_ports":
 		remoteArgs = []string{"ports", "--json"}
 	case "alerts":
@@ -459,6 +463,16 @@ func toolDefinitions() []toolDef {
 					"server": {Type: "string", Description: "Remote server name from config (optional, runs locally if omitted)"},
 				},
 				Required: []string{"name"},
+			},
+		},
+		{
+			Name:        "docker_stats",
+			Description: "Get resource usage statistics (CPU, memory, network, block I/O) for all running Docker containers",
+			InputSchema: inputSchema{
+				Type: "object",
+				Properties: map[string]propDef{
+					"server": {Type: "string", Description: "Remote server name from config (optional, runs locally if omitted)"},
+				},
 			},
 		},
 		{

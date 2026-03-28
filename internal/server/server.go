@@ -116,6 +116,7 @@ func (s *Server) routes() {
 	if s.demo {
 		s.mux.HandleFunc("GET /api/status", s.cors(s.demoStatus))
 		s.mux.HandleFunc("GET /api/docker", s.cors(s.demoDocker))
+		s.mux.HandleFunc("GET /api/docker/stats", s.cors(s.demoDockerStats))
 		s.mux.HandleFunc("GET /api/processes", s.cors(s.demoProcesses))
 		s.mux.HandleFunc("GET /api/alerts", s.cors(s.demoAlerts))
 		s.mux.HandleFunc("GET /api/ports", s.cors(s.demoPorts))
@@ -127,6 +128,7 @@ func (s *Server) routes() {
 	} else {
 		s.mux.HandleFunc("GET /api/status", s.cors(s.handleStatus))
 		s.mux.HandleFunc("GET /api/docker", s.cors(s.handleDocker))
+		s.mux.HandleFunc("GET /api/docker/stats", s.cors(s.handleDockerStats))
 		s.mux.HandleFunc("GET /api/processes", s.cors(s.handleProcesses))
 		s.mux.HandleFunc("GET /api/alerts", s.cors(s.handleAlerts))
 		s.mux.HandleFunc("GET /api/ports", s.cors(s.handlePorts))
@@ -253,6 +255,47 @@ func (s *Server) handleDocker(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{
 		"available":  true,
 		"containers": containers,
+	})
+}
+
+func (s *Server) handleDockerStats(w http.ResponseWriter, r *http.Request) {
+	if srv, ok := s.isRemoteRequest(r); ok {
+		out, err := s.remoteRunner(srv, "docker", "stats", "--json")
+		if err != nil {
+			writeJSON(w, map[string]any{
+				"available": false,
+				"message":   err.Error(),
+				"stats":     []any{},
+			})
+			return
+		}
+		var stats json.RawMessage
+		if err := json.Unmarshal(out, &stats); err != nil {
+			writeJSON(w, map[string]any{
+				"available": false,
+				"message":   "invalid response from remote server",
+				"stats":     []any{},
+			})
+			return
+		}
+		writeJSON(w, map[string]any{
+			"available": true,
+			"stats":     stats,
+		})
+		return
+	}
+	stats, err := docker.Stats()
+	if err != nil {
+		writeJSON(w, map[string]any{
+			"available": false,
+			"message":   "Docker is not available",
+			"stats":     []any{},
+		})
+		return
+	}
+	writeJSON(w, map[string]any{
+		"available": true,
+		"stats":     stats,
 	})
 }
 
