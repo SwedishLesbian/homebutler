@@ -34,7 +34,7 @@ func ExecShell(server *config.ServerConfig, program string, args ...string) erro
 	width, height, _ := getWindowSize(fd)
 
 	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
+		ssh.ECHO:          0,
 		ssh.TTY_OP_ISPEED: 115200,
 		ssh.TTY_OP_OSPEED: 115200,
 	}
